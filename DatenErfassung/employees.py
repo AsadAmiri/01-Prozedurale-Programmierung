@@ -20,6 +20,9 @@ while True:
         while True:
             first_name = input("Vorname eingeben: ")
             first_name = first_name.strip() # leer Zeichen vom Anfang/Ende entfernen
+            if not first_name:
+                print("Vorname-Feld darf nicht leer sein!")
+                continue
             # Uberprüfen ob nur Buchstaben eingegeben wurden, leer Zeichen erlaubt
             if first_name.replace(" ","").isalpha():
                 break   # Schleife beenden wenn Eingabe gültig ist
@@ -29,6 +32,9 @@ while True:
         while True:
             last_name = input("Nachname eingeben: ")
             last_name = last_name.strip()   # leer Zeichen vom Anfang/Ende entfernen
+            if not last_name:
+                print("Nachname-Feld darf nicht leer sein!")
+                continue
             if last_name.replace(" ","").isalpha():
                 break
             else:
@@ -38,8 +44,11 @@ while True:
         while True:
             date_of_birth = input("Geburtsdatum eingeben TT.MM.JJJJ: ")
             date_of_birth = date_of_birth.strip()
+            if not date_of_birth:
+                print("Geburtsdatum darf nicht leer sein!")
+                continue
             # Format von Geburtsdatum uberprüfen
-            if(len(date_of_birth) != 10 or date_of_birth[2] != '.' or date_of_birth[5] != '.'):
+            if len(date_of_birth) != 10 or date_of_birth[2] != '.' or date_of_birth[5] != '.':
                 print("Datum müss in TT.MM.JJJJ Format eigegeben werden!")
                 continue    # User erneut auffordern
             # mit try-except fehler abfangen
@@ -81,25 +90,104 @@ while True:
         while True:
             address = input("Adresse eingeben: ")
             address = address.strip()   # leer Zeichen vom Anfang/Ende entfernen
+            if not address:
+                print("Adresse-Feld darf nicht leer sein!")
+                continue
             # Variable: es müss mindestens eine Nummer (Hausnummer) vorhanden sein
             has_number = False
             for char in address:
                 if char.isdigit():
                     has_number = True
                     break
-            # Variable für Buchstaben, Zahlen und erlaubte Sonderzeichen in Adresse
-            allowed_symbols = [' ', '-', ',', '/', '.']
-            symbols = True
-            for char in address:
-                # Falls ein Zeichen nicht alphanumerisch und nicht in allowed_symbols ist,symbols auf False setzen
-                if not (char.isalnum() or char in allowed_symbols):
-                    symbols = False
-            # prüfen ob, mindestens eine Zahl und nur Buchstaben/Zahlen, ob auch nur erlaubte Zeichen vorhanden sind
-            if (has_number and (address.isalnum() or symbols)):
+            # prüfen ob, mindestens eine Zahl und nur Buchstaben/Zahlen und leer Zeichen vorhanden.
+            if address.replace(" ", "").isalnum() and has_number:
                 break   # Schleife verlassen wenn gültige Adresse
             else:
                 # sonst erneut eingeben
                 print("Adresse ungültig, erneut versuchen!")
+
+        # Email einlesen und validieren
+        while True:
+            e_mail = input("Email eingeben: ")
+            e_mail = e_mail.strip()  # leer Zeichen vom Anfang/Ende entfernen
+            if not e_mail:
+                print("Email-Feld darf nicht leer sein!")
+                continue
+            # Email Länge darf max. 254 stellig sein.
+            if len(e_mail) > 254:
+                print("Ungültige Email-Adresse, Die Länge darf max. 254 Zeichen sein!")
+                continue
+            allowed_symbols = ".+-_@"
+            for char in e_mail:
+                # Überprüfen ob Buchstaben und Zahlen und erlaubte Symbole
+                if not (char.isalnum() or char in allowed_symbols):
+                    print("Ungültige Email-Adresse, unerlaubte Symbole vorhanden!")
+                    break
+            # überprüfen ob @ Symbol vorhanden
+            if '@' not in e_mail:
+                print("Ungültige Email-Adresse, '@' fehlt!")
+                continue
+            # Mail-Adresse an die Stelle @ teilen, um zu schauen ob nur ein @ vorhanden
+            e_mail_parts = e_mail.split('@')
+            if len(e_mail_parts) != 2:
+                print("Ungültige Email-Adresse, '@' darf nur einmal vorkommen!")
+                continue
+            # Adresse in username und domain Teile teilen
+            before_at, after_at = e_mail_parts
+            # überprüfen ob vor '@' und nachher nicht leer ist
+            if not before_at or not after_at:
+                print("Ungültige Email-Adresse, Username oder Domain fehlt!")
+                continue
+            #   lokal Teil darf max. 64 Zeichen lang sein
+            if len(before_at) > 64:
+                print("lokal Teil darf max. 64 Zeichen lang sein")
+                continue
+            # Überprüfen ob '.' in Domain-Teil vorhanden
+            if '.' not in after_at:
+                print("Ungültige Email-Adresse, im Domain-Teil fehlt '.'!")
+                continue
+            # Domain-Teil teilen: an die Stellen wo '.' sind
+            after_at_parts = after_at.split('.')
+            if len(after_at_parts) > 3:
+                print("Ungültige Email-Adresse, im Domain-Teil dürfen max. zwei '.'!")
+                continue
+            # Die Endung überprüfen: muss min. zweistellig sein ( .at, .com...)
+            if len(after_at_parts[-1]) < 2:
+                print("Ungültige Email-Adresse, die Endung muss min. zweistellig sein!")
+                continue
+
+            # Telefonnummer einlesen und validieren
+            while True:
+                telefon = input("Telefonnummer eingeben [Format: +43-xxx-xxxxxxx]: ")
+                telefon = telefon.strip()
+                if not telefon:
+                    print("Telefon-Feld darf nicht leer sein!")
+                    continue
+                # Nummer-Länge überprüfen
+                if len(telefon) != 15:
+                    print("Telefonnummer ist ungültig!")
+                    continue
+                # Überprüfen ob nur Zahlen und erlaubte Symbole vorhanden
+                for char in telefon:
+                    if not (char.isdigit() or char in allowed_symbols):
+                        print("Ungültige Nummer, unerlaubte Symbole vorhanden!")
+                        break
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     #elif user_choice == 2:
