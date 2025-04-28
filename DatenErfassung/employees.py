@@ -7,18 +7,19 @@ while True:
     # Try-except: Fehler abfangen, beim Umwandeln der Eingabe in eine Zahl(int),  wenn keine Zahl eingegeben wird.
     try:
         # Menü anzeigen
+        print("** MENÜ **")
         print("1. Persondaten hinzufügen")
         print("2. Persondaten anzeigen")
         print("3. Progream beenden")
         user_choice = int(input("Ihre Eingabe: "))
     except ValueError:
-        print("Ungültige Eingabe! 1, 2 oder 3 eingeben!")
+        print("Ungültige Eingabe! Nur 1, 2 oder 3 eingeben!\n")
         continue    # zurück zum Menü
 
     if user_choice == 1:
         # Vorname validieren und einlesen
         while True:
-            first_name = input("Vorname eingeben: ")
+            first_name = input("\nVorname eingeben: ")
             first_name = first_name.strip() # leer Zeichen vom Anfang/Ende entfernen
             if not first_name:
                 print("Vorname-Feld darf nicht leer sein!")
@@ -65,11 +66,11 @@ while True:
                 continue
             # Jahr validieren
             if year > 2008 or year < 1925:
-                print("Person müss zwischen 18 und 100 Jahre alt sein!")
+                print("Jahr darf zwischen 1925 und 2008 sein!")
                 continue # wenn jünger als 18 oder älter als 100, erneute Eingabe auffordern
             # Monat validieren
             if month < 1 or month > 12:
-                print("Monat müss zwischen 1 und 12 sein!")
+                print("Monat muss zwischen 1 und 12 sein!")
                 continue
             # Anzahl der Tagen in einem Monat festlegen
             months_with_30 = [4, 6, 9, 11] # April, Juni, September, November
@@ -93,6 +94,7 @@ while True:
             if not address:
                 print("Adresse-Feld darf nicht leer sein!")
                 continue
+
             # Variable: es müss mindestens eine Nummer (Hausnummer) vorhanden sein
             has_number = False
             for char in address:
@@ -117,12 +119,21 @@ while True:
             if len(e_mail) > 254:
                 print("Ungültige Email-Adresse, Die Länge darf max. 254 Zeichen sein!")
                 continue
+            # Variable für erlaubte Symbole initializieren
             allowed_symbols = ".+-_@"
+            # Boolean Variable: annehmen dass nur erlaubte Symbole vorhanden
+            symbols = True
             for char in e_mail:
                 # Überprüfen ob Buchstaben und Zahlen und erlaubte Symbole
                 if not (char.isalnum() or char in allowed_symbols):
                     print("Ungültige Email-Adresse, unerlaubte Symbole vorhanden!")
+                    # Variable auf False setzen, wenn unerlaubte Symbole vorhanden
+                    symbols = False
+                    # For-Schleife beenden
                     break
+            # Falls unerlaubte Symbole vorhanden, erneut auffordern.
+            if not symbols:
+                continue
             # überprüfen ob @ Symbol vorhanden
             if '@' not in e_mail:
                 print("Ungültige Email-Adresse, '@' fehlt!")
@@ -156,44 +167,70 @@ while True:
                 print("Ungültige Email-Adresse, die Endung muss min. zweistellig sein!")
                 continue
 
-            # Telefonnummer einlesen und validieren
-            while True:
-                telefon = input("Telefonnummer eingeben [Format: +43-xxx-xxxxxxx]: ")
-                telefon = telefon.strip()
-                if not telefon:
-                    print("Telefon-Feld darf nicht leer sein!")
-                    continue
-                # Nummer-Länge überprüfen
-                if len(telefon) != 15:
-                    print("Telefonnummer ist ungültig!")
-                    continue
-                # Überprüfen ob nur Zahlen und erlaubte Symbole vorhanden
-                for char in telefon:
-                    if not (char.isdigit() or char in allowed_symbols):
-                        print("Ungültige Nummer, unerlaubte Symbole vorhanden!")
-                        break
+            # break wenn alles gültig
+            break
 
+        # Telefonnummer einlesen und validieren
+        while True:
+            telefon = input("Telefonnummer eingeben [Format: +xx-xxx-xxxxxxx]: ")
+            telefon = telefon.strip()   # leer Zeichen von Anfang und Ende entfernen
+            # Falls Telefonfeld leer ist
+            if not telefon:
+                print("Telefon-Feld darf nicht leer sein!")
+                continue
+            # Nummer-Länge überprüfen
+            if len(telefon) != 15:
+                print("Telefonnummer ist ungültig!")
+                continue
+            # mit '+' beginnen und Länderwahl, Anbieter und Nummer mit '-' trennen
+            if telefon[0] != '+' or telefon[3] != '-' or telefon[7] != '-':
+                print("Ungültige Format Eingabe! [Format: +xx-xxx-xxxxxxx]")
+                continue
+            # Überprüfen ob nur Zahlen als Nummer eingegeben sind.
+            if not (telefon[1:3].isdigit() and telefon[4:7].isdigit() and telefon[8:].isdigit()):
+                print("Telefonnummer ist ungültig! nur Zahlen eingeben!")
+                continue
 
+            # break wenn alles gültig
+            break
 
+        # die Daten in einem Dictionary speichern.
+        employee = {
+            'Vorname': first_name.title(),
+            'Nachname': last_name.title(),
+            'Geburtsdatum': date_of_birth,
+            'Adresse': address.title(),
+            'Email': e_mail,
+            'Telefon': telefon
+            }
+        # Daten von einzelnen Mitarbeiter in die Liste von Employees speichern
+        employees.append(employee)
+        print("\nPersondaten wurden erfolgreich gespeichert!")
+        print("_" * 40 + "\n")
+    # Option 2 für die Ausgabe
+    elif user_choice == 2:
+        # Falls die Liste leer ist
+        if not employees:
+            print("\nDie Liste ist leer!\n")
+            continue    # erneut auffordern
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    #elif user_choice == 2:
-
+        print("-" * 40)
+        print(f"\n** Mitarbeiter Liste **")
+        print("-" * 40)
+        # Die Liste von employees durchlaufen und auch Index ausgeben
+        for index, employee in enumerate(employees, start=1):
+            # Alle Ausgaben: Index, Name, Geburtsdatum...
+            print(f"Person: {index}")
+            print(f"Name: {employee['Vorname']} {employee['Nachname']}")
+            print(f"Geburtsdatum: {employee['Geburtsdatum']}")
+            print(f"Adresse: {employee['Adresse']}")
+            print(f"Email: {employee['Email']}")
+            print(f"Telefon: {employee['Telefon']}")
+            print("-" * 40 + "\n")
+    # Option 3 um Programm mit break zu beenden
     elif user_choice == 3:
+        print("Programm wird beendet!")
         break
-
+    # Wenn Zahlen ausser 1, 2 oder 3 eingegeben wird
     else:
-        print("Ungültige Eingabe! 1, 2 oder 3 eingeben!")
+        print("\nUngültige Eingabe! 1, 2 oder 3 eingeben!\n")
