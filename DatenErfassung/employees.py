@@ -17,6 +17,29 @@ while True:
         continue    # zurück zum Menü
 
     if user_choice == 1:
+
+        # Besucher*in oder Mitarbeiter*in
+        while True:
+            person_status = ""
+            print("\nEin*e Mitarbeiter*in oder ein*e Besucher*in erfassen?")
+            print("1. für Mitarbeiter*in")
+            print("2. für Besucher*in")
+            try:
+                arbeiter_besucher = int(input("Ihre Eingabe (1 oder 2): "))
+            except ValueError:
+                print("Ungültige Eingabe! Nur 1 oder 2 eingeben!")
+                continue
+
+            if arbeiter_besucher == 1:
+                person_status = "Mitarbeiter*in"
+                break
+            elif arbeiter_besucher == 2:
+                person_status = "Besucher*in"
+                break
+            else:
+                print("Ungültige Eingabe! Nur 1 oder 2 eingeben!")
+                continue
+
         # Vorname validieren und einlesen
         while True:
             first_name = input("\nVorname eingeben: ")
@@ -52,7 +75,7 @@ while True:
             if len(date_of_birth) != 10 or date_of_birth[2] != '.' or date_of_birth[5] != '.':
                 print("Datum müss in TT.MM.JJJJ Format eigegeben werden!")
                 continue    # User erneut auffordern
-            # mit try-except fehler abfangen
+            # mit try-except fehler abfangen, falls keine Zahleneingabe
             try:
                 # Geburtsdatum in Tag, Monat und Jahr teilen (split), ob tatsächlich Zahlen sind
                 day = date_of_birth[0:2]
@@ -72,14 +95,19 @@ while True:
             if month < 1 or month > 12:
                 print("Monat muss zwischen 1 und 12 sein!")
                 continue
+
             # Anzahl der Tagen in einem Monat festlegen
             months_with_30 = [4, 6, 9, 11] # April, Juni, September, November
             if month == 2:
-                max_days = 28
-            elif month in months_with_30:
+                # Falls Schaltjahr: Feb. = 29
+                if(year % 4 == 0 and year % 100 != 0) or (year % 400 == 0):
+                    max_days = 29
+                else:
+                    max_days = 28
+            elif month in months_with_30: # April, Juni, September, November
                 max_days = 30
             else:
-                max_days = 31
+                max_days = 31   # Jan. Mär. Mai. Jul. Aug. Okt. Dez.
             # Tagen validieren
             if day < 1 or day > max_days:
                 print(f"Tag müss zwischen 1 und {max_days} für Monat {month} sein!")
@@ -95,15 +123,26 @@ while True:
                 print("Adresse-Feld darf nicht leer sein!")
                 continue
 
-            # Variable: es müss mindestens eine Nummer (Hausnummer) vorhanden sein
-            has_number = False
+            allowed_symbols = ",.-/ "
+            # Variablen: es mussen Alphabeten Nummer (Hausnummer) oder auch erlaubte Zeichen vorhanden sein
+            has_digit = False
+            has_alpha = False
+            valid_symbols = True
+
             for char in address:
+                # Überprüfung für Digit (z.B. Hausnummer)
                 if char.isdigit():
-                    has_number = True
+                    has_digit = True
+                # Überprüfung für Alphabeten
+                elif char.isalpha():
+                    has_alpha = True
+                # Überprüfung ob erlaubte Symbole vorhanden
+                elif not (char in allowed_symbols):
+                    valid_symbols = False
                     break
-            # prüfen ob, mindestens eine Zahl und nur Buchstaben/Zahlen und leer Zeichen vorhanden.
-            if address.replace(" ", "").isalnum() and has_number:
-                break   # Schleife verlassen wenn gültige Adresse
+            # Überprufen ob Alphabet, Zahl und nur erlaubte Symbole vorhanden sind
+            if has_alpha and has_digit and valid_symbols:
+                break   # Falls gültige Eingabe, while-schleife beenden
             else:
                 # sonst erneut eingeben
                 print("Adresse ungültig, erneut versuchen!")
@@ -196,6 +235,7 @@ while True:
 
         # die Daten in einem Dictionary speichern.
         employee = {
+            'Status': person_status.title(),
             'Vorname': first_name.title(),
             'Nachname': last_name.title(),
             'Geburtsdatum': date_of_birth,
@@ -206,7 +246,8 @@ while True:
         # Daten von einzelnen Mitarbeiter in die Liste von Employees speichern
         employees.append(employee)
         print("\nPersondaten wurden erfolgreich gespeichert!")
-        print("_" * 40 + "\n")
+        print("_" * 60 + "\n")
+
     # Option 2 für die Ausgabe
     elif user_choice == 2:
         # Falls die Liste leer ist
@@ -214,19 +255,20 @@ while True:
             print("\nDie Liste ist leer!\n")
             continue    # erneut auffordern
 
-        print("-" * 40)
-        print(f"\n** Mitarbeiter Liste **")
-        print("-" * 40)
+        print("-" * 60)
+        print(f"\n** Liste der gespeicherten Personen **")
+        print("-" * 60)
         # Die Liste von employees durchlaufen und auch Index ausgeben
         for index, employee in enumerate(employees, start=1):
             # Alle Ausgaben: Index, Name, Geburtsdatum...
             print(f"Person: {index}")
+            print(f"Status: {employee['Status']}")
             print(f"Name: {employee['Vorname']} {employee['Nachname']}")
             print(f"Geburtsdatum: {employee['Geburtsdatum']}")
             print(f"Adresse: {employee['Adresse']}")
             print(f"Email: {employee['Email']}")
             print(f"Telefon: {employee['Telefon']}")
-            print("-" * 40 + "\n")
+            print("-" * 60 + "\n")
     # Option 3 um Programm mit break zu beenden
     elif user_choice == 3:
         print("Programm wird beendet!")
