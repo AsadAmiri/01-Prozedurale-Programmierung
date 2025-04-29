@@ -1,5 +1,5 @@
 # Leere Liste um Personendaten zu speichern
-employees = []
+persons = []
 
 # Endlose Schleife um Menü wiederholt zu zeigen
 while True:
@@ -234,8 +234,8 @@ while True:
             break
 
         # die Daten in einem Dictionary speichern.
-        employee = {
-            'Status': person_status.title(),
+        person = {
+            'Status': person_status,
             'Vorname': first_name.title(),
             'Nachname': last_name.title(),
             'Geburtsdatum': date_of_birth,
@@ -243,32 +243,79 @@ while True:
             'Email': e_mail,
             'Telefon': telefon
             }
-        # Daten von einzelnen Mitarbeiter in die Liste von Employees speichern
-        employees.append(employee)
+        # Daten von einzelnen Mitarbeiter in die Liste von personen speichern
+        persons.append(person)
         print("\nPersondaten wurden erfolgreich gespeichert!")
         print("_" * 60 + "\n")
 
     # Option 2 für die Ausgabe
     elif user_choice == 2:
         # Falls die Liste leer ist
-        if not employees:
+        if not persons:
             print("\nDie Liste ist leer!\n")
             continue    # erneut auffordern
 
-        print("-" * 60)
-        print(f"\n** Liste der gespeicherten Personen **")
-        print("-" * 60)
-        # Die Liste von employees durchlaufen und auch Index ausgeben
-        for index, employee in enumerate(employees, start=1):
-            # Alle Ausgaben: Index, Name, Geburtsdatum...
-            print(f"Person: {index}")
-            print(f"Status: {employee['Status']}")
-            print(f"Name: {employee['Vorname']} {employee['Nachname']}")
-            print(f"Geburtsdatum: {employee['Geburtsdatum']}")
-            print(f"Adresse: {employee['Adresse']}")
-            print(f"Email: {employee['Email']}")
-            print(f"Telefon: {employee['Telefon']}")
-            print("-" * 60 + "\n")
+        while True:
+            try:
+                print("\n1. Mitarbeiterliste anzeigen\n2. Besucherliste anzeigen\n3. Beide anzeigen")
+                output_choice = int(input("Ihre Eingabe: "))
+            except ValueError:
+                print("Ungültige Eingabe, 1, 2 oder 3 eingeben!")
+                continue
+
+            print("-" * 60)
+            print(f"\n** Liste der gespeicherten Personen **")
+            print("-" * 60)
+
+            # Eingabe: 1, wird nur die Liste von Mitarbeiter*in gezeigt
+            if output_choice == 1:
+                # Die Liste von persons durchlaufen und auch Index ausgeben
+                for index, person in enumerate(persons, start=1):
+                    if person["Status"] == "Mitarbeiter*in":
+                        # Alle Ausgaben: Index, Name, Geburtsdatum...
+                        print(f"Person: {index}")
+                        print(f"Status: {person['Status']}")
+                        print(f"Name: {person['Vorname']} {person['Nachname']}")
+                        print(f"Geburtsdatum: {person['Geburtsdatum']}")
+                        print(f"Adresse: {person['Adresse']}")
+                        print(f"Email: {person['Email']}")
+                        print(f"Telefon: {person['Telefon']}")
+                        print("-" * 60 + "\n")
+                break   # nach Ausgabe, innere Schleife beenden und zurück zur Haupt-Menü
+
+            # Eingabe: 2, wird nur die Liste von Besucher*in gezeigt
+            elif output_choice == 2:
+                # Die Liste von persons durchlaufen und auch Index ausgeben
+                for index, person in enumerate(persons, start=1):
+                    if person["Status"] == "Besucher*in":
+                        # Alle Ausgaben: Index, Name, Geburtsdatum...
+                        print(f"Person: {index}")
+                        print(f"Status: {person['Status']}")
+                        print(f"Name: {person['Vorname']} {person['Nachname']}")
+                        print(f"Geburtsdatum: {person['Geburtsdatum']}")
+                        print(f"Adresse: {person['Adresse']}")
+                        print(f"Email: {person['Email']}")
+                        print(f"Telefon: {person['Telefon']}")
+                        print("-" * 60 + "\n")
+                break   # nach Ausgabe, innere Schleife beenden und zurück zur Haupt-Menü
+
+            # Eingabe: 3, gesamte Liste wird angezeigt (Mitarbeiter*in und Besucher*in)
+            elif output_choice == 3:
+                # Die Liste von persons durchlaufen und auch Index ausgeben
+                for index, person in enumerate(persons, start=1):
+                    print(f"Person: {index}")
+                    print(f"Status: {person['Status']}")
+                    print(f"Name: {person['Vorname']} {person['Nachname']}")
+                    print(f"Geburtsdatum: {person['Geburtsdatum']}")
+                    print(f"Adresse: {person['Adresse']}")
+                    print(f"Email: {person['Email']}")
+                    print(f"Telefon: {person['Telefon']}")
+                    print("-" * 60 + "\n")
+                break   # nach Ausgabe, innere Schleife beenden und zurück zur Haupt-Menü
+            else:
+                print("Ungültige Eingabe, 1, 2 oder 3 eingeben!")
+
+
     # Option 3 um Programm mit break zu beenden
     elif user_choice == 3:
         print("Programm wird beendet!")
@@ -276,3 +323,7 @@ while True:
     # Wenn Zahlen ausser 1, 2 oder 3 eingegeben wird
     else:
         print("\nUngültige Eingabe! 1, 2 oder 3 eingeben!\n")
+
+
+
+
