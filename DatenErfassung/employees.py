@@ -315,7 +315,6 @@ while True:
             else:
                 print("Ungültige Eingabe, 1, 2 oder 3 eingeben!")
 
-
     # Option 3 um Programm mit break zu beenden
     elif user_choice == 3:
         print("Programm wird beendet!")
