@@ -1,6 +1,6 @@
 import re
 from datetime import date, datetime
-
+# Liste für Personen (Liste von Dictionary)
 persons = []
 
 
@@ -9,6 +9,7 @@ def email_validation(email_address):
     email_address = email_address.strip()
     pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     # pattern = r'^(?=.{1,256}$)(?=.{1,64}@)[a-zA-Z0-9!#$%&\'*+/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&\'*+/=?^_`{|}~-]+)*@(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$'
+    # Prüfen, ob email_address mit dem regex pattern übereinstimmt
     if re.match(pattern, email_address):
         return True
     else:
@@ -79,6 +80,7 @@ def edit_or_delete(persons):
         print("Es sind keine Daten vorhanden.")
         return  # Die Funktion wird beendet, wenn keine Daten vorhanden sind
     # Eingabe: Vorname der Person
+    print("Vor- und Nachname der zu bearbeitende Person eingeben")
     firstname = input("Vorname eingeben: ").strip().title()
     # Eingabe: Nachname der Person
     lastname = input("Nachname eingeben: ").strip().title()
@@ -151,7 +153,7 @@ def edit_or_delete(persons):
                 # Bestätigung, dass die Änderungen gespeichert sind
                 print("Änderungen wurden gespeichert.\n")
             # Wenn der Benutzer die Option Löschen wählt
-            if user_action == "2":
+            elif user_action == "2":
                 # Lösche die Person aus der Liste
                 persons.remove(person)
                 print("Persondaten wurden gelöscht!")
@@ -161,6 +163,43 @@ def edit_or_delete(persons):
     # Fehlermeldung: wenn keine Person mit dem eingegebenen Vor/Nachnamen gefunden
     if not found:
         print(f"Persondaten mit dem Namen {firstname} {lastname} nicht vorhanden")
+
+# Funktion um gesamte Liste anzuzeigen
+def show_whole_list():
+    # Durchlaufe jede Person in der Liste "persons"
+    for person in persons:
+        print("-" * 60)
+        # Durchlaufe jedes Feld (key) und sein Wert (value) im Dictionary der aktuellen Person
+        for key, value in person.items():
+            # Gib den Feldnamen und den Wert aus
+            print(f"{key}: {value}")
+    print("-" * 60)
+
+# Funktion um gefilterte Liste anzuzeigen
+def show_filtered_list():
+    # User wird gefragt, nach welchem Feld gefiltert werden soll
+    field = input("Wonach wollen Sie filtern? (Vorname, Nachname, Geburtsdatum, Adresse, Email, Telefon, Status): ").strip().title()
+    # User gibt den Suchwert ein, nach dem im gewählten Feld gesucht wird
+    value = input(f"Nach welchem Wert im Feld '{field}' wollen Sie suchen?: ").strip().title()
+
+    # Liste mit passenden Einträgen erstellen und prüfen ob Feld existiert und gesuchte Wert im Feld vorkommt
+    # - Prüft, ob das Feld existiert und ob der gesuchte Wert im Feldinhalt vorkommt
+    filtered = [
+        person for person in persons
+        if field in person and value in person[field].title()
+    ]
+    # Wenn keine passenden Einträge gefunden sind
+    if not filtered:
+        print("Keine Einträge gefunden!")
+    else:
+        # Wenn passende Einträge gefunden
+        for person in filtered:
+            print("-" * 60)
+            # alle Felder der gefundenen Person anzeigen
+            for key, value in person.items():
+                print(f"{key}: {value}")
+
+    print("-" * 60)
 
 
 def main():
@@ -220,12 +259,11 @@ def main():
                 # Wenn return False ist
                 if not date_of_birth_validation(date_of_birth):
                     continue
-                # Wenn return ist True
                 break   # wenn gültige Eingabe, dann Schleife beenden
 
             # Adresse einlesen und mit Hilfe der Funktion validieren
             while True:
-                address = input("Adresse eingeben: ")
+                address = input("Adresse eingeben [Format Straße Hausnummer, Posleitzahl(4-stellig) Stadt]: ")
                 if address_validation(address):
                     break
                 else:
@@ -241,7 +279,7 @@ def main():
 
             # Telefon einlesen und mit Hilfe der Funktion validieren
             while True:
-                telefon = input("Telefonnummer eingeben: ")
+                telefon = input("Telefonnummer eingeben [Format +43 123 123456789]: ")
                 if telefon_validation(telefon):
                     break
                 else:
@@ -262,24 +300,31 @@ def main():
             print("\nPersondaten wurden erfolgreich gespeichert!")
             print("_" * 60 + "\n")
 
-        # Personendaten ausgeben
+        # Personendaten ausgeben, wenn Option 2 ausgewählt ist
         elif user_choice == 2:
+            # Wenn die Personenliste leer ist
             if not persons:
                 print("Es sind keine Daten vorhanden.")
                 continue
-
-            print("\nPersonendaten:")
-            for index, person in enumerate(persons, start=1):
-                print(f"Index: {index}")
-                for key, value in person.items():
-                    print(f"{key}: {value}")
-                print("-" * 30)
+            # Menü anzeigen ob Gesamtliste oder Gefilterte anzeigen
+            print("1. Gesamtliste anzeigen")
+            print("2. Liste filtern")
+            user_filter = input("Ihre Eingabe 1 oder 2: ")
+            # Gesamtliste anzeigen, mit Funktion
+            if user_filter == "1":
+                print("\nPersonendaten:")
+                show_whole_list()
+            # Gefilterte Liste anzeigen
+            elif user_filter == "2":
+                print("\nPersonendaten:")
+                show_filtered_list()
 
         # Personendaten bearbeiten oder löschen
         elif user_choice == 3:
             edit_or_delete(persons)
 
         elif user_choice == 4:
+            print("Programm wird beendet!")
             break
 
 
