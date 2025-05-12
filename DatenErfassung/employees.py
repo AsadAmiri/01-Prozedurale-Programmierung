@@ -1,331 +1,418 @@
-import re
-from datetime import date, datetime
-# Liste für Personen (Liste von Dictionary)
-persons = []
+import json # zum json datei zu bearbeiten
+import os   # zum überprüfen ob eine Datei existiert oder nicht
+import re   # regex um zu validieren
+from tkinter import *
+from tkinter import messagebox  # GUI Info/Fehler zeigen
+from tkinter import ttk  # Für dropdown (Combobox)
+from datetime import datetime   # um mit Datum zu arbeiten
 
+# Funktion: Datei "persons.json" in Lesemodus öffnen, wenn nicht existiert dann leere Liste zurückgeben
+def load_data(filename):
+    if os.path.exists(filename):
+        with open(filename, "r") as file:
+            return json.load(file) # eine Pythonliste zurückgeben
+    else:
+        return []
 
-# Funktion: E-Mail validieren
-def email_validation(email_address):
-    email_address = email_address.strip()
-    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-    # pattern = r'^(?=.{1,256}$)(?=.{1,64}@)[a-zA-Z0-9!#$%&\'*+/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&\'*+/=?^_`{|}~-]+)*@(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$'
-    # Prüfen, ob email_address mit dem regex pattern übereinstimmt
-    if re.match(pattern, email_address):
+# Funktion: Daten in json Format speichern
+def save_data(filename, data):
+    with open(filename, "w") as file:
+        json.dump(data, file, indent=1) # Pythonliste(data) in json speichern
+
+# Name validieren
+def validate_name(name):
+    pattern = r"[A-ZÄÖÜ][a-zäöüß]+(-[A-ZÄÖÜ][a-zäöüß]+)?(\s[A-ZÄÖÜ][a-zäöüß]+(-[A-ZÄÖÜ][a-zäöüß]+)?)+"
+    if re.fullmatch(pattern, name):
         return True
     else:
         return False
 
-# Funktion: Name validieren
-def name_validation(name):
-    name = name.replace(" ", "").strip()
-    if not name:
-        print("Namen-Feld ist leer!")
-        return False
-    if name.isalpha():
+# Telefon validieren
+def validate_telefon(telefon):
+    pattern =r"\+43\s?\d{5,12}"
+    if re.fullmatch(pattern, telefon):
         return True
+    else:
+        return False
 
-    print("Ungültige Eingabe, erneut versuchen!")
-    return False
+# E-Mail validieren
+def validate_email(email):
+    pattern = r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
+    if re.fullmatch(pattern, email):
+        return True
+    else:
+        return False
 
-# Funktion: Geburtsdatum validieren
-def date_of_birth_validation(birthday):
-    birthday = birthday.strip()
+# Geburtstag validieren
+def validate_date_of_birth(date):
     try:
-        # Umwandelung der eingegebenen Datum im Format: TT.MM.JJJJ
-        d_o_birth = datetime.strptime(birthday, "%d.%m.%Y").date()
+        date = datetime.strptime(date, "%d.%m.%Y")
+        return date <= datetime.now()
     except ValueError:
-        # Wenn "except ValueError" den Fehler abfängt (falsches Datum/ Format)
-        print("Ungültiges Datum oder ungültiges Format [TT.MM.JJJJ]")
         return False
 
-    # Heutiges Datum in today speichern.
-    today = date.today()
-    if d_o_birth > today:
-        print("Geburtsdatum liegt in der Zukunft!")
-        return  False
-    # Alter ausrechnen
-    age = today.year - d_o_birth.year - ((today.month, today.day) < (d_o_birth.month, d_o_birth.day))
-    # Wenn Alter kleiner als 18 oder größer als 100 Jahre
-    if not (17 < age < 100):
-        print("Alter muss zwischen 18 und 100 sein!")
-        return False
-
-    return True
-
-# Funktion: Adresse validieren
-def address_validation(address):
-    address = address.strip()
-
-    pattern = r'^[A-Za-zÄÖÜäöüß\s\.-]+\d+(\s?[A-Za-z0-9/-]*),?\s\d{4}\s+[A-Za-zäöüß]+(?:\s+[A-Za-zäöüß]+)?$'
-
-    if re.match(pattern, address):
+# Adresse validieren
+def validate_address(address):
+    pattern = r"[A-Za-zÄÖÜäöüß\s\.-]+\d+(\s?[A-Za-z0-9/-]*),\s\d{4}\s[A-Za-zäöüß]+(?:\s[A-Za-zäöüß]+)?"
+    if re.fullmatch(pattern, address):
         return True
     else:
         return False
 
-# Funktion: Telefonnummer validieren
-def telefon_validation(telefon):
-    telefon = telefon.strip()
+# Alter ausrechnen
+def calculate_age(birthday):
+    # versuchen Str-Geburtsdatum in Datum umwandeln
+    try:
+        birthdate = datetime.strptime(birthday, "%d.%m.%Y")
+        today = datetime.today()
+        # Alter berechnen
+        return today.year - birthdate.year - ((today.month, today.day) < (birthdate.month, birthdate.day))
+    except:
+        # Wenn Datum ungültig ist, gib None zurück
+        return None
 
-    pattern = r'^\+43[\s/-]?\d[1-9][0-9]{0,3}[\s/-]?\d{3,10}$'
-    if re.match(pattern, telefon):
-        return True
-    else:
-        return False
 
-# Funktion: Personendaten bearbeiten oder löschen
-def edit_or_delete(persons):
-    # Überprüfen, ob überhaupt Personendaten vorhanden sind
+# Funktion: um Daten zu zeigen
+def show_data_gui(filter_mode=False, filter_type="All", filter_value=""):
+    persons = load_data("persons.json")  # Daten von persons.json laden
+    text_area.delete(1.0, END)  # text_area für die Anzeige löschen
+    # Wenn keine Daten vorhanden sind
     if not persons:
-        print("Es sind keine Daten vorhanden.")
-        return  # Die Funktion wird beendet, wenn keine Daten vorhanden sind
-    # Eingabe: Vorname der Person
-    print("Vor- und Nachname der zu bearbeitende Person eingeben")
-    firstname = input("Vorname eingeben: ").strip().title()
-    # Eingabe: Nachname der Person
-    lastname = input("Nachname eingeben: ").strip().title()
-    found = False   # Boolean, um festzustellen, ob Person gefunden wurde
-    # Durchlaufe alle Personen in Liste, um gesuchte Person zu finden
-    for person in persons:
-        # Überprüfen ob eingegebene Namen übereinstimmen, wenn so dann ist Person gefunden
-        if person['Vorname'] == firstname and  person['Nachname'] == lastname:
-            found = True    # Die Person wurde gefunden
-            # Ausgabe der gefundenen Person
-            print(f"Persondaten gefunden: {person['Vorname']} {person['Nachname']}")
-            # Menü Auswahl
-            print("Was möchten Sie machen?")
-            print("Zum bearbeiten 1 eingeben")
-            print("zum löschen 2 eingeben")
-            user_action = input("Ihre Eingabe - 1 oder 2: ").strip()
-
-            ## Wenn der User die Option zum Bearbeiten gewählt hat
-            if user_action == "1":
-                # Liste von Feldern, zum Bearbeiten
-                for field in ['Vorname', 'Nachname', 'Geburtsdatum', 'Adresse', 'Email', 'Telefon']:
-                    # Aktuellen Wert des Feldes ausgeben
-                    print(f"{field} (aktuell): {person[field]}")
-                    # Schleife für die neuen Eingaben
-                    while True:
-                        # Eingabe für das jeweilige Feld
-                        new_entry = input(f"Neuen {field} eingeben oder Enter zum behalten: ")
-                        new_entry = new_entry.strip()
-                        # Wenn keine Eingabe, wird der Bearbeitung für dieses Feld abgebrochen
-                        if not new_entry:
-                            break
-                        # Validierung und Bearbeitung von Vorname oder Nachname
-                        if field in ['Vorname', 'Nachname']:
-                            # Überprüfe die Gültigkeit des Namens
-                            if name_validation(new_entry):
-                                # Wenn gültig, wird Name aktualisiert
-                                person[field] = new_entry.title()
-                                break # Schleife für dieses Feld beenden
-                            else:
-                                # Fehlermeldung wenn Name ungültig
-                                print("Ungültige Eingabe, wird nicht übernommen")
-                        # Validierung und Bearbeitung von Geburtsdatum
-                        elif field == 'Geburtsdatum':
-                            if date_of_birth_validation(new_entry):
-                                person[field] = new_entry
-                                break
-                            else:
-                                print("Ungültige Eingabe, wird nicht übernommen")
-                        # Validierung und Bearbeitung von Adresse
-                        elif field == 'Adresse':
-                            if address_validation(new_entry):
-                                person[field] = new_entry
-                                break
-                            else:
-                                print("Ungültige Eingabe, wird nicht übernommen")
-                        # Validierung und Bearbeitung von E-Mail
-                        elif field == 'Email':
-                            if email_validation(new_entry):
-                                person[field] = new_entry
-                                break
-                            else:
-                                print("Ungültige Eingabe, wird nicht übernommen")
-                        # Validierung und Bearbeitung von Telefon
-                        elif field == 'Telefon':
-                            if telefon_validation(new_entry):
-                                person[field] = new_entry
-                                break
-                            else:
-                                print("Ungültige Eingabe, wird nicht übernommen")
-                # Bestätigung, dass die Änderungen gespeichert sind
-                print("Änderungen wurden gespeichert.\n")
-            # Wenn der Benutzer die Option Löschen wählt
-            elif user_action == "2":
-                # Lösche die Person aus der Liste
-                persons.remove(person)
-                print("Persondaten wurden gelöscht!")
-            # Fehlermeldung bei ungültiger Eingabe
-            else:
-                print("Ungültige eingabe")
-    # Fehlermeldung: wenn keine Person mit dem eingegebenen Vor/Nachnamen gefunden
-    if not found:
-        print(f"Persondaten mit dem Namen {firstname} {lastname} nicht vorhanden")
-
-# Funktion um gesamte Liste anzuzeigen
-def show_whole_list():
-    # Durchlaufe jede Person in der Liste "persons"
-    for person in persons:
-        print("-" * 60)
-        # Durchlaufe jedes Feld (key) und sein Wert (value) im Dictionary der aktuellen Person
-        for key, value in person.items():
-            # Gib den Feldnamen und den Wert aus
-            print(f"{key}: {value}")
-    print("-" * 60)
-
-# Funktion um gefilterte Liste anzuzeigen
-def show_filtered_list():
-    # User wird gefragt, nach welchem Feld gefiltert werden soll
-    field = input("Wonach wollen Sie filtern? (Vorname, Nachname, Geburtsdatum, Adresse, Email, Telefon, Status): ").strip().title()
-    # User gibt den Suchwert ein, nach dem im gewählten Feld gesucht wird
-    value = input(f"Nach welchem Wert im Feld '{field}' wollen Sie suchen?: ").strip().title()
-
-    # Liste mit passenden Einträgen erstellen und prüfen ob Feld existiert und gesuchte Wert im Feld vorkommt
-    # - Prüft, ob das Feld existiert und ob der gesuchte Wert im Feldinhalt vorkommt
-    filtered = [
-        person for person in persons
-        if field in person and value in person[field].title()
-    ]
-    # Wenn keine passenden Einträge gefunden sind
-    if not filtered:
-        print("Keine Einträge gefunden!")
+        text_area.insert(END, "Keine Daten vorhanden.\n")
+        return
+    # Eine Liste für gefilterte Personen
+    filtered_persons = []
+    # Wenn Filtermodus aktiviert ist
+    if filter_mode:
+        # Schleife über alle Personen und ihre Daten laufen lassen und ein String erstellen
+        for person in persons:
+            person_data = f"{person['name']} {person['date_of_birth']}{person['telefon']} {person['email']} {person['address'] } {person['person_type']}".lower()
+            # Wenn der Filtertyp "Alle" ist oder der Filterwert im Personen-Datenstring enthalten ist
+            if filter_type == "Alle" or filter_value.lower() in person_data:
+                filtered_persons.append(person)
     else:
-        # Wenn passende Einträge gefunden
-        for person in filtered:
-            print("-" * 60)
-            # alle Felder der gefundenen Person anzeigen
-            for key, value in person.items():
-                print(f"{key}: {value}")
+        filtered_persons = persons  # Kein Filter, Alle Personen anzeigen
 
-    print("-" * 60)
+    # Wenn keine übereinstimmende Daten gefunden
+    if not filtered_persons:
+        text_area.insert(END, "Keine Daten gefunden.\n")
+        return
 
+    # für jede gefilterte Person Daten zeigen
+    for person in filtered_persons:
+        # Ausgabe der Personendaten
+        person_data = f"ID: {person['id']}\n" \
+                      f"Name: {person['name']}\n" \
+                      f"Geburtsdatum: {person['date_of_birth']}\n" \
+                      f"Telefonnummer: {person['telefon']}\n" \
+                      f"E-Mail: {person['email']}\n" \
+                      f"Adresse: {person['address']}\n" \
+                      f"Person ist: {person['person_type']}\n"
 
-def main():
-    while True:
-        # Try-except: Fehler abfangen, beim Umwandeln der Eingabe in eine Zahl(int),  wenn keine Zahl eingegeben wird.
+        # Überprüfen ob Geburtsmonat/Geburtstag ist
         try:
-            # Menü anzeigen
-            print("** MENÜ **")
-            print("1. Persondaten hinzufügen")
-            print("2. Persondaten anzeigen")
-            print("3. Personendaten bearbeiten")
-            print("4. Programm beenden")
-            user_choice = int(input("Ihre Eingabe: "))
-        except ValueError:
-            print("Ungültige Eingabe! Nur 1, 2 oder 3 eingeben!\n")
-            continue  # zurück zum Menü
+            # Geburtsdatum in Datetime Obj konvertieren
+            birth_date = datetime.strptime(person["date_of_birth"], "%d.%m.%Y")
+            today = datetime.today()
+            # wenn Geburtsmonat ist gleich wie aktueller Monat
+            if birth_date.month == today.month:
+                # Geburtstagsdatum für aktuelle Jahr erstellen
+                this_year_birthday = birth_date.replace(year=today.year)
+                text_area.insert(END, "Geburtsmonat 🎂\n")
+                # wenn Geburtstag heute ist
+                if this_year_birthday.date() == today.date():
+                    text_area.insert(END, "Alles gute zum Geburtstag 🎂\n")
+                else:   # Unterschied der Tagen berechnen (zum nächsten Geburtstag)
+                    days_difference = (this_year_birthday - today).days
+                    # wenn der Geburtstag noch nicht gekommen
+                    if days_difference > 0:
+                        text_area.insert(END, f"Noch {days_difference} Tage bis zum Geburtstag\n")
+                    else:   # wenn Geburtstag schon vorbei ist
+                        text_area.insert(END, f"Geburtstag war vor {-days_difference} Tagen\n")
+        except:
+            pass
 
-        if user_choice == 1:
+        # String Personendaten in text_area anzeigen und eine Trennlinie
+        text_area.insert(END, person_data)
+        text_area.insert(END, "\n" + '-' * 40 + "\n")
 
-            # Besucher*in oder Mitarbeiter*in
-            while True:
-                person_status = ""
-                print("\nEin*e Mitarbeiter*in oder ein*e Besucher*in erfassen?")
-                print("1. für Mitarbeiter*in")
-                print("2. für Besucher*in")
-                try:
-                    arbeiter_besucher = int(input("Ihre Eingabe (1 oder 2): "))
-                except ValueError:
-                    print("Ungültige Eingabe! Nur 1 oder 2 eingeben!")
-                    continue
 
-                if arbeiter_besucher == 1:
-                    person_status = "Mitarbeiter*in"
-                    break
-                elif arbeiter_besucher == 2:
-                    person_status = "Besucher*in"
-                    break
-                else:
-                    print("Ungültige Eingabe! Nur 1 oder 2 eingeben!")
-                    continue
+# Funktion um Filter zurücksetzen
+def reset_filter():
+    filter_option.set("Alle")
+    filter_input_entry.delete(0, END)
 
-            # Name einlesen und mit Hilfe der Funktion validieren
-            while True:
-                first_name = input("Vorname eingeben: ")
-                if not name_validation(first_name):
-                    continue
+# Funktion: um eine neue Person hinzufügen
+def add_person_gui():
+    # Nimmt Daten von "Entry Fields" und erstellt ein Dict. person
+    person = {
+        "id": id_entry.get().strip(),
+        "name": name_entry.get().strip(),
+        "date_of_birth": date_of_birth_entry.get().strip(),
+        "telefon": telefon_entry.get().strip(),
+        "email": email_entry.get().strip(),
+        "address": address_entry.get().strip(),
+        "person_type": mitarbeiter_besucher_option.get()
+    }
+    # ID Feld überprüfen ob leer ist
+    if not person["id"]:
+        messagebox.showerror("Fehler", "ID darf nicht leer sein.")
+        return  # Funktion beenden
+    # Überprüfung des Namens mit der Funktion validate_name
+    if not validate_name(person["name"]):
+        messagebox.showerror("Fehler", "Ungültiger Name.") # Wenn ungültig Fehler anzeigen
+        return  # Funktion beenden, keine Person speichern
+    # Überprüfung des Geburtsdatums mit der Funktion validate_date_of_birth
+    if not validate_date_of_birth(person["date_of_birth"]):
+        messagebox.showerror("Fehler", "Ungültiges Geburtsdatum.")
+        return  # Funktion beenden
+    # Überprüfung der Telefonnummer mit der Funktion validate_telefon
+    if not validate_telefon(person["telefon"]):
+        messagebox.showerror("Fehler", "Ungültige Telefonnummer.")
+        return
+    # Überprüfung der E-Mail mit der Funktion validate_email
+    if not validate_email(person["email"]):
+        messagebox.showerror("Fehler", "Ungültige E-Mail.")
+        return
+    # Überprüfung der Adresse mit der Funktion validate_address
+    if not validate_address(person["address"]):
+        messagebox.showerror("Fehler", "Ungültige Adresse.")
+        return
 
-                last_name = input("Nachname eingeben: ")
-                if not name_validation(last_name):
-                    continue
+    # Daten aus Datei "persons.json" laden
+    persons = load_data("persons.json")
 
-                break
+    # Überprüfen ob ID schon existiert
+    for existing_person in persons:
+        if existing_person["id"] == person["id"]:
+            messagebox.showerror("Fehler", "ID ist schon vergeben!")
+            return
 
-            # Geburtsdatum einlesen und mit Hilfe der Funktion validieren
-            while True:
-                date_of_birth = input("Geburtsdatum eingeben [Format TT.MM.JJJJ]: ")
-                # Wenn return False ist
-                if not date_of_birth_validation(date_of_birth):
-                    continue
-                break   # wenn gültige Eingabe, dann Schleife beenden
+    # Persondaten in Liste speichern
+    persons.append(person)
+    save_data("persons.json", persons)  # Liste in json Datei speichern
+    # eine Erfolgsmeldung anzeigen
+    messagebox.showinfo("Erfolg", "Person erfolgreich gespeichert!")
+    # Alle Entry-Fields zurücksetzen
+    for entry in [id_entry, name_entry, date_of_birth_entry, telefon_entry, email_entry, address_entry]:
+        entry.delete(0, END)
+    # In text_area anzeigen, dass name+id gespeichert
+    text_area.insert(END, f"{person['name']} ({person['id']}) gespeichert\n")
 
-            # Adresse einlesen und mit Hilfe der Funktion validieren
-            while True:
-                address = input("Adresse eingeben [Format Straße Hausnummer, Posleitzahl(4-stellig) Stadt]: ")
-                if address_validation(address):
-                    break
-                else:
-                    print("Ungültige Eingabe, erneut versuchen!")
-
-            # E-Mail-Adresse einlesen und mit Hilfe der Funktion validieren
-            while True:
-                email = input("Email eingeben: ")
-                if email_validation(email):
-                    break
-                else:
-                    print("Ungültige Eingabe, erneut versuchen!")
-
-            # Telefon einlesen und mit Hilfe der Funktion validieren
-            while True:
-                telefon = input("Telefonnummer eingeben [Format +43 123 123456789]: ")
-                if telefon_validation(telefon):
-                    break
-                else:
-                    print("Ungültige Eingabe, erneut versuchen!")
-
-            # die Daten in einem Dictionary speichern.
-            person = {
-                'Status': person_status,
-                'Vorname': first_name.title(),
-                'Nachname': last_name.title(),
-                'Geburtsdatum': date_of_birth,
-                'Adresse': address.title(),
-                'Email': email,
-                'Telefon': telefon
-            }
-            # Daten von einzelnen Mitarbeiter in die Liste von personen speichern
-            persons.append(person)
-            print("\nPersondaten wurden erfolgreich gespeichert!")
-            print("_" * 60 + "\n")
-
-        # Personendaten ausgeben, wenn Option 2 ausgewählt ist
-        elif user_choice == 2:
-            # Wenn die Personenliste leer ist
-            if not persons:
-                print("Es sind keine Daten vorhanden.")
-                continue
-            # Menü anzeigen ob Gesamtliste oder Gefilterte anzeigen
-            print("1. Gesamtliste anzeigen")
-            print("2. Liste filtern")
-            user_filter = input("Ihre Eingabe 1 oder 2: ")
-            # Gesamtliste anzeigen, mit Funktion
-            if user_filter == "1":
-                print("\nPersonendaten:")
-                show_whole_list()
-            # Gefilterte Liste anzeigen
-            elif user_filter == "2":
-                print("\nPersonendaten:")
-                show_filtered_list()
-
-        # Personendaten bearbeiten oder löschen
-        elif user_choice == 3:
-            edit_or_delete(persons)
-
-        elif user_choice == 4:
-            print("Programm wird beendet!")
+# Funktion: um Daten zu ändern/bearbeiten
+def edit_person_gui():
+    # Daten von json Datei laden
+    persons = load_data("persons.json")
+    # ID von User aus id_entry holen, um zu bearbeiten
+    person_id = id_entry.get().strip()
+    # überprüfen ob ID leer ist
+    if not person_id:
+        messagebox.showerror("Fehler", "Bitte ID eingeben!")
+        return
+    # Person mit eingegebener ID suchen
+    found = False # um zu Überprüfen ob sie Person gefunden wurde
+    for person in persons:  # Schleife durch alle Personen
+        # Wenn eine Person mit der gleichen ID gefunden wird, Person in person_to_edit
+        if person["id"] == person_id:
+            person_to_edit = person
+            found = True
             break
+    # Fehlermeldung wenn Person nicht gefunden wurde
+    if not found:
+        messagebox.showerror("Fehler", "Person mit dieser ID wurde nicht gefunden!")
+        return
 
+    # Wenn die Person gefunden, aktuelle Daten in Entry-Fields anzeigen
+    name_entry.delete(0, END)   # Vorherige Werte löschen, wenn vorhanden
+    name_entry.insert(0, person_to_edit["name"]) # Neuen Name einfügen
 
-main()
+    date_of_birth_entry.delete(0, END)
+    date_of_birth_entry.insert(0, person_to_edit["date_of_birth"])
+
+    telefon_entry.delete(0, END)
+    telefon_entry.insert(0, person_to_edit["telefon"])
+
+    email_entry.delete(0, END)
+    email_entry.insert(0, person_to_edit["email"])
+
+    address_entry.delete(0, END)
+    address_entry.insert(0, person_to_edit["address"])
+
+# Funktion: Nach der Bearbeitung, validieren und speichern
+def save_changes():
+    person_id = id_entry.get().strip() # ID der Person holen, die bearbeitet wird
+    persons = load_data("persons.json") # Daten aus json Datei holen
+    # found, ob die Person gefunden wurde
+    found = False
+    for person in persons: # ID suchen und die Person, in person_to_edit speichern
+        if person["id"] == person_id:
+            person_to_edit = person
+            found = True
+            break
+    # wenn Person nicht gefunden, found bleibt False
+    if not found:
+        messagebox.showerror("Fehler", "Person mit dieser ID wurde nicht gefunden!")
+        return
+
+    # die neue Daten von Entry-Fields holen
+    updated_person = {
+        "id": person_to_edit["id"],  # ID muss gleich bleiben
+        "name": name_entry.get().strip(),
+        "date_of_birth": date_of_birth_entry.get().strip(),
+        "telefon": telefon_entry.get().strip(),
+        "email": email_entry.get().strip(),
+        "address": address_entry.get().strip(),
+        "person_type": mitarbeiter_besucher_option.get()
+    }
+    # die neuen Daten validieren
+    if not validate_name(updated_person["name"]):
+        messagebox.showerror("Fehler", "Ungültiger Name!")
+        return
+    if not validate_date_of_birth(updated_person["date_of_birth"]):
+        messagebox.showerror("Fehler", "Ungültiges Geburtsdatum!")
+        return
+    if not validate_telefon(updated_person["telefon"]):
+        messagebox.showerror("Fehler", "Ungültige Telefonnummer!")
+        return
+    if not validate_email(updated_person["email"]):
+        messagebox.showerror("Fehler", "Ungültige E-Mail!")
+        return
+    if not validate_address(updated_person["address"]):
+        messagebox.showerror("Fehler", "Ungültige Adresse!")
+        return
+    # neue Persondaten in der Liste aktualisieren
+    for i, person in enumerate(persons):
+        if person["id"] == person_id:
+            persons[i] = updated_person
+            break
+    # neue Daten in json speichern, von aktualisierte Liste persons
+    save_data("persons.json", persons)
+    # Erfolgsmeldung anzeigen und Entry-Fields löschen
+    messagebox.showinfo("Erfolg", "Daten erfolgreich geändert!")
+    clear_fields()  # Eingabefelder zurücksetzen
+
+# Funktion: alle Entry-Fields löschen, nach erfolgreicher Speicherung
+def clear_fields():
+    for entry in [id_entry, name_entry, date_of_birth_entry, telefon_entry, email_entry, address_entry]:
+        entry.delete(0, END)
+
+# Funktion: um Text Area zu löschen
+def delete_text_area():
+    text_area.delete("1.0", END)
+
+############################### GUI TEIL ###############################################
+
+# das Hauptfenster erstellen, root ist ein Objekt der Tk()-Klasse
+root = Tk()
+# Fenstertitel
+root.title("Daten Management System")
+# Setze die Fenstergröße
+root.geometry("1115x700")
+# Setze die Hintergrundfarbe des Fensters
+root.configure(bg="#8B7D7B")
+# # Füge ein Fenster-Icon hinzu
+#root.iconbitmap("title_icon.ico")
+# Hier erstellen wir ein Überschriften-Label (Daten Management System)
+heading_label = Label(root, text="Daten Management System", font=("Helvetica", 24, "bold"), background="#8B7D7B",
+                      foreground="midnightblue", border=10)
+# Positioniere das Label im Fenster – pack() setzt es oben zentriert, fill=X (horizental ausgehnen)
+heading_label.pack(fill=X)
+# Erstelle ein LabelFrame für Details wie Name, Telefon usw. "Persondaten" ist der Titel dieses Rahmens
+person_details_frame = LabelFrame(root, text="Persondaten", font=("Helvetica", 18, "bold"), foreground="midnightblue",
+                                  border=6, background="#8B7D7B")
+person_details_frame.pack(fill=X)
+# Name-Label im Rahmen hinzufügen
+name_label = Label(person_details_frame, text="Name", bg="#8B7D7B", font=("Helvetica", 14, "bold"), fg="black")
+# Positioniere das Name-Label mit grid() – gibt Zeile und Spalte an
+name_label.grid(row=0, column=0)
+# Eingabefeld für den Namen
+name_entry = Entry(person_details_frame, font=("Helvetica", 14), border=3)
+name_entry.grid(row=0, column=1)   # positioniere es mit grid()
+# Label für Geburtsdatum
+date_of_birth_label = Label(person_details_frame, text="Geburtsdatum", bg="#8B7D7B", font=("Helvetica", 14, "bold"), fg="black")
+date_of_birth_label.grid(row=0, column=2)  # positioniere es mit grid()
+# Eingabefeld für Geburtsdatum
+date_of_birth_entry = Entry(person_details_frame, font=("Helvetica", 14), border=3)
+date_of_birth_entry.grid(row=0, column=3)
+# Label für ID
+id_label = Label(person_details_frame, text="ID", bg="#8B7D7B", font=("Helvetica", 14, "bold"), fg="black")
+id_label.grid(row=1, column=0)
+# Eingabefeld für ID
+id_entry = Entry(person_details_frame, font=("Helvetica", 14), border=3)
+id_entry.grid(row=1, column=1)
+# Label für Adresse
+address_label = Label(person_details_frame, text="Adresse", bg="#8B7D7B", font=("Helvetica", 14, "bold"), fg="black")
+address_label.grid(row=0, column=4)
+# Eingabefeld für Adresse
+address_entry = Entry(person_details_frame, font=("Helvetica", 14), border=3)
+address_entry.grid(row=0, column=5)
+# Label für E-Mail
+email_label = Label(person_details_frame, text="E-Mail", bg="#8B7D7B", font=("Helvetica", 14, "bold"), fg="black")
+email_label.grid(row=1, column=2)
+# Eingabefeld für E-Mail
+email_entry = Entry(person_details_frame, font=("Helvetica", 14), border=3)
+email_entry.grid(row=1, column=3)
+# Label für Telefonnummer
+telefon_label = Label(person_details_frame, text="Telefonnummer", bg="#8B7D7B", font=("Helvetica", 14, "bold"), fg="black")
+telefon_label.grid(row=1, column=4)
+# Eingabefeld für Telefonnummer
+telefon_entry = Entry(person_details_frame, font=("Helvetica", 14), border=3)
+telefon_entry.grid(row=1, column=5)
+# Label für Mitarbeiter oder Besucher
+mitarbeiter_besucher_label = Label(person_details_frame, text="Person ist:", font=("Helvetica", 14, "bold"), bg="#8B7D7B")
+mitarbeiter_besucher_label.grid(row=2, column=0)
+# Dropdown Menü für Auswahl zwi. Mitarbeiter/ Besucher
+mitarbeiter_besucher_option = ttk.Combobox(person_details_frame, font=("Helvetica", 14), values=["Mitarbeiter/in", "Besucher/in"], width=19)
+mitarbeiter_besucher_option.grid(row=2, column=1, pady=5)
+mitarbeiter_besucher_option.current(0)
+# Rahmen für die Ausgabefläche
+output_frame = Frame(root)
+output_frame.pack()
+# Überschrift für Ausgabebereich (Personendaten: )
+output_frame_label = Label(output_frame, text="Personendaten", font=("Helvetica", 20, "bold"), bg="#8B7D7B")
+output_frame_label.pack(fill=X)
+# Scrollbar hinzufügen
+text_area_scrollbar = Scrollbar(output_frame, orient=VERTICAL)
+text_area_scrollbar.pack(side=RIGHT, fill=Y)
+# Textfeld zur Anzeige der Daten und mit scrollbar verbinden
+text_area = Text(output_frame, height=20, width=80, yscrollcommand=text_area_scrollbar.set)
+text_area.pack()
+# Scrollbar konfigurieren, damit sie funktioniert
+text_area_scrollbar.config(command=text_area.yview)
+# Rahmen für die Buttons (Hinzufügen, ID Suchen, Löschen usw.)
+buttons_frame = Frame(root, pady=10, bg="#8B7D7B", bd=5)
+buttons_frame.pack(anchor="center") # Button-Rahmen platzieren
+# Button: Daten hinzufügen
+add_button = Button(buttons_frame, text="Daten Hinzufügen", font=("Helvetica", 14, "bold"), border=3, width=15, command=add_person_gui)
+add_button.grid(row=0, column=0, padx=10)
+# Button: ID suchen
+edit_button = Button(buttons_frame, text="ID Suchen", font=("Helvetica", 14, "bold"), border=3, width=15, command=edit_person_gui)
+edit_button.grid(row=0, column=1, padx=10)
+# Button: Löschen
+delete_button = Button(buttons_frame, text="Löschen", font=("Helvetica", 14, "bold"), border=3, width=15, command=delete_text_area)
+delete_button.grid(row=0, column=3, padx=10)
+# Button: Änderungen speichern
+save_changes_button = Button(buttons_frame, text="Änderung speichern", font=("Helvetica", 14, "bold"), border=3, width=17, command=save_changes)
+save_changes_button.grid(row=0, column=4, padx=10)
+# Filterbereich
+filter_frame = Frame(root, bg="#8B7D7B", pady=10)
+filter_frame.pack(fill=X)
+# Label für Filterbereich
+filter_label = Label(filter_frame, text="Filtern nach:", font=("Helvetica", 14, "bold"), bg="#8B7D7B")
+filter_label.grid(row=0, column=0, padx=10)
+# Dropdown um Filtertyp zu wählen (z.B. filtern nach: Name, Email usw.)
+filter_option = ttk.Combobox(filter_frame, font=("Helvetica", 14), values=["Alle", "Name", "Geburtsdatum", "Telefonnummer", "E-Mail", "Adresse"])
+filter_option.current(0)  # Standard = "Alle"
+filter_option.grid(row=0, column=1, padx=10)
+# Eingabefeld für Filterwert
+filter_input_entry = Entry(filter_frame, font=("Helvetica", 14), border=3)
+filter_input_entry.grid(row=0, column=2, padx=10)
+# Button: Filter anwenden
+filter_button = Button(filter_frame, text="Daten Zeigen", font=("Helvetica", 14, "bold"), border=3, width=17,
+                       command=lambda: show_data_gui(filter_mode=True, filter_type=filter_option.get(), filter_value=filter_input_entry.get()))
+filter_button.grid(row=0, column=3, padx=10)
+# Filter Button zurücksetzen
+reset_filter_button = Button(filter_frame, text="Filter Zurücksetzen", font=("Helvetica", 14, "bold"), border=3, width=15, command=reset_filter)
+reset_filter_button.grid(row=0, column=4, padx=10)
+# Haupt-Loop: Hält das Fenster offen, bis der Benutzer es schließt
+root.mainloop()
